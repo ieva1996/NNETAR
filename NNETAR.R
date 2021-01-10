@@ -11,6 +11,7 @@ library(LINselect)
 library(tsoutliers)
 library(expsmooth)
 library(fma)
+library(vars)
 
 ################################################################  NNETAR Parameters  ##############################################
 L <-10 #short term forecast horizon
@@ -77,13 +78,57 @@ get_outliers<-function(myts_TGT) {
 outlier<-get_outliers(lynx)
 
 ### Bind Together As Exogenous Matrix
-outlier <-cbind(lynx,outlier)
-outlier_covariate <-as.matrix(outlier)
+outlier <-cbind(log(lynx),outlier)  #LOg Target Value
+
+### Make Dataframe
+df <-data.frame(outlier)
+
+my_reg <-  lm(df$log.lynx. ~ ., data = df)
+tmp <-exp(my_reg$fitted.values)  #convert back from log
+
+
+### XREG Using Auto.Arima Function
+fit <- auto.arima(tmp)
+XREG1 <-fit$fitted  #fitted Values
+XREG2 <-data.frame(forecast(fit,L))
+XREG2 <-XREG2$Point.Forecast
+
+###################################################################  AUto-Arima With Multiple XREG##################################################
+### XREG Using Auto.Arima Function
+fit <- auto.arima(lynx)
+XREG1 <-fit$fitted  #fitted Values
+XREG2 <-data.frame(forecast(fit,L))
+XREG2 <-XREG2$Point.Forecast
+
+### NNETAR Forecast
+#TGT_N <-as.numeric(lynx)  #Convert Dependant Variable into Numeric
+
+TGT_N <-lynx #Time Series as Target Variable
+
+### Fit NNETAR
+fit_NNETAR <- nnetar(TGT_N, size=S_N, repeats = RPT, xreg = XREG1,lambda = "auto", decay = decay_N)
+sweep::sw_glance(fit_NNETAR)
+
+### Take Standard Deviations from Residuals
+res_sd <- sd(fit_NNETAR$residuals, na.rm=TRUE)
+
+sims <- rnorm(L*PATHS, mean=0, sd=res_sd)  #Build Intervals
+
+fcast_NNETAR <- forecast(fit_NNETAR, h=L, PI=TRUE,  xreg = XREG2,  npaths=PATHS, innov=sims)  #Forecast
+autoplot(fcast_NNETAR$mean)
+
+fcast_NNETAR <-data.frame(fcast_NNETAR)
+fcast_NNETAR <-as.numeric(fcast_NNETAR$Point.Forecast)
+
+acc<-accuracy(fit_NNETAR)
+MAPE_Arima_MR <-acc[5]  #MAPE
+
+
 
 ###################################################################  AUto-Arima ##################################################
 
 ### XREG Using Auto.Arima Function
-fit <- auto.arima(outlier_covariate)
+fit <- auto.arima(lynx)
 XREG1 <-fit$fitted  #fitted Values
 XREG2 <-data.frame(forecast(fit,L))
 XREG2 <-XREG2$Point.Forecast
@@ -233,6 +278,6 @@ MAPE_RPOIS <-acc[5]  #MAPE
 
 
 ### Results
-accuracy_results <-data.frame(MAPE_NO_XREG, MAPE_TBATS, MAPE_ETS, MAPE_RPOIS,  MAPE_Arima)
-colnames(accuracy_results)<-c("No_XREG", "TBATS", "ETS", "RPOIS", "Arima")
+accuracy_results <-data.frame(MAPE_NO_XREG, MAPE_TBATS, MAPE_ETS, MAPE_RPOIS,  MAPE_Arima, MAPE_Arima_MR )
+colnames(accuracy_results)<-c("No_XREG", "TBATS", "ETS", "RPOIS", "Arima", "Matrix_XREG")
 accuracy_results
