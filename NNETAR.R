@@ -89,14 +89,14 @@ tmp <-exp(my_reg$fitted.values)  #convert back from log
 
 ### XREG Using Auto.Arima Function
 fit <- auto.arima(tmp)
-XREG1 <-fit$fitted  #fitted Values
+XREG1 <-fit$residuals  #fitted Values
 XREG2 <-data.frame(forecast(fit,L))
 XREG2 <-XREG2$Point.Forecast
 
 ###################################################################  AUto-Arima With Multiple XREG##################################################
 ### XREG Using Auto.Arima Function
 fit <- auto.arima(lynx)
-XREG1 <-fit$fitted  #fitted Values
+XREG1 <-fit$residuals  #fitted Values
 XREG2 <-data.frame(forecast(fit,L))
 XREG2 <-XREG2$Point.Forecast
 
@@ -129,7 +129,7 @@ MAPE_Arima_MR <-acc[5]  #MAPE
 
 ### XREG Using Auto.Arima Function
 fit <- auto.arima(lynx)
-XREG1 <-fit$fitted  #fitted Values
+XREG1 <-fit$residuals  #fitted Values
 XREG2 <-data.frame(forecast(fit,L))
 XREG2 <-XREG2$Point.Forecast
 
@@ -161,7 +161,7 @@ MAPE_Arima <-acc[5]  #MAPE
 
 ### XREG Using TBATS
 fit <- tbats(lynx)
-XREG1 <-fit$fitted  #fitted Values
+XREG1 <-fit$residuals  #fitted Values
 XREG2 <-data.frame(forecast(fit,L))
 XREG2 <-XREG2$Point.Forecast
 
@@ -192,7 +192,7 @@ MAPE_TBATS <-acc[5]  #MAPE
 
 ###############################################################    XREG Using ETS #######################################################
 fit <- ets(lynx)
-XREG1 <-fit$fitted  #fitted Values
+XREG1 <-fit$residuals  #fitted Values
 XREG2 <-data.frame(forecast(fit,L))
 XREG2 <-XREG2$Point.Forecast
 
